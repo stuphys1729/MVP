@@ -26,7 +26,12 @@ class Lattice():
         if not init_cond:
             self.lattice = np.random.choice( [1, 0], size=(x,y) )
         elif init_cond == "glider":
-            self.lattice = np.zeroes( (x,y), dtype=np.int8)
+            self.lattice = np.zeros( (x,y), dtype=np.int8)
+            self.lattice[0,1] = 1
+            self.lattice[1,2] = 1
+            self.lattice[2,0] = 1
+            self.lattice[2,1] = 1
+            self.lattice[2,2] = 1
 
     def update(self, i, j):
         l = self.lattice
@@ -65,7 +70,8 @@ def main():
 
     num_runs = 1000
 
-    lattice = Lattice(50, 50)
+    #lattice = Lattice(50, 50)
+    lattice = Lattice(50, 50, "glider")
     lattice_queue = Queue()
     lattice_queue.put( (deepcopy(lattice.lattice)) )
 
