@@ -116,9 +116,9 @@ def main():
         help="Use this option to enable animation")
     parser.add_option("-i", action="store", dest="init", default="random",
         help="Use this to specify the initial condition:\t\t"
-            + "\'random\'or \'r\'   : random allocation\t\t\t"
+            + "\'random\'or \'r\'   : random allocation\t\t\t\t"
             + "\'glider\' or \'g\'  : simple glider\t\t\t\t"
-            + "\'block\' or \'b\'   : absorbing block state\t\t"
+            + "\'block\' or \'b\'   : absorbing block state\t\t\t"
             + "\'blink\' or \'i\'   : simple blinker")
     parser.add_option("-x", action="store", dest="x", default=50, type="int",
         help="Use this to specify the x-axis size (default: 50)")

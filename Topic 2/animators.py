@@ -38,9 +38,10 @@ class GoL_Animator():
 
 class SIRS_Animator():
 
-    def __init__(self, lattice_queue):
+    def __init__(self, lattice_queue, frames):
 
         self.queue = lattice_queue
+        self.frames = frames
 
         data = lattice_queue.get()
 
