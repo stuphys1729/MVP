@@ -66,6 +66,25 @@ class Lattice():
 
         self.lattice = temp
 
+    def get_CoM(self):
+        """ """
+        points = []
+        for i in range(self.x):
+            for j in range(self.y):
+                if self.lattice[i,j] == 1:
+                    points.append( (i,j) ) # Identify live cells
+
+        com_x = 0
+        com_y = 0
+        for r in points:
+            com_x += r[0]
+            com_y += r[1]
+
+        x = com_x/len(points)
+        y = com_y/len(points)
+
+        return (x,y)
+
 def main():
 
     num_runs = 1000
