@@ -12,9 +12,10 @@ logging.basicConfig(level=logging.DEBUG,
 
 class GoL_Animator():
 
-    def __init__(self, lattice_queue):
+    def __init__(self, lattice_queue, frames):
 
         self.queue = lattice_queue
+        self.frames = frames
 
         data = lattice_queue.get()
 
@@ -55,7 +56,8 @@ class SIRS_Animator():
             self.mat.set_data(data)
 
     def animate(self):
-        anim = animation.FuncAnimation(self.fig, self.update)
+        anim = animation.FuncAnimation(self.fig, self.update, frames=self.frames)
         figManager = plt.get_current_fig_manager()
         figManager.window.showMaximized()
         plt.show()
+        return

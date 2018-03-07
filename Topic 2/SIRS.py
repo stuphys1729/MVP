@@ -66,7 +66,7 @@ def main():
 
     num_runs = 1000
 
-    lattice = Lattice(100, 100, 0.8, 0.1, 0.01)
+    lattice = Lattice(50, 50, 0.8, 0.1, 0.01)
     lattice_queue = Queue()
     lattice_queue.put( (deepcopy(lattice.lattice)) )
 
