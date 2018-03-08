@@ -152,7 +152,8 @@ def main():
         animator_proc.start()
 
     if contour:
-        num_points = 11
+        num_points = 21
+        interval = 0.05
         # setup toolbar
         sys.stdout.write("Running {} different points: ".format(num_points))
         sys.stdout.write("[%s]" % (" " * num_points))
@@ -177,10 +178,10 @@ def main():
                 frac, var = get_var(frac_list)
                 rec_fracs.append(frac)
                 rec_vars.append(var)
-                p3 += 0.1
+                p3 += interval
             frac_mat.append(rec_fracs[:])
             var_mat.append(rec_vars[:])
-            p1 += 0.1
+            p1 += interval
             sys.stdout.write("#")
             sys.stdout.flush()
 
