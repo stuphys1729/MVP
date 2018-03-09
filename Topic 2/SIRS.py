@@ -8,6 +8,7 @@ import sys
 from copy import deepcopy
 import matplotlib.pyplot as plt
 import pickle
+from random import sample
 
 from animators import SIRS_Animator
 
@@ -19,7 +20,7 @@ class Lattice():
     """
     """
 
-    def __init__(self, x, y, p1, p2, p3, init_conds=None):
+    def __init__(self, x, y, p1, p2, p3, immune_frac=None):
 
         self.x = x
         self.y = y
@@ -28,8 +29,17 @@ class Lattice():
         self.rec_prob = p2
         self.sup_prob = p3
 
-        if not init_conds:
-            self.lattice = np.random.choice( [0, 1], size=(x,y) )
+        self.lattice = np.random.choice( [0, 1], size=(x,y) )
+        if immune_frac:
+            num_immune = int(np.floor(immune_frac*self.x*self.y))
+            indices = []
+            for i in range(self.x):
+                for j in range(self.y):
+                    indices.append( (i,j) )
+            selections = sample(indices, num_immune)
+            for (i,j) in selections:
+                self.lattice[i,j] = 3 # Immune
+
 
     def update(self, i, j):
 
@@ -104,6 +114,10 @@ def main():
         help="Use this option to specify whether to plot at the end of a sequence")
     parser.add_option("-p", action="store_true", default=False,
         help="Use this option along with a file name to plot from that data dump")
+    parser.add_option("--immune", action="store", default=None, type="float",
+        help="Use this to specify the fraction of immune actors")
+    parser.add_option("--immunesweep", action="store_true", default=False,
+        help="Do a sweep of immune fractions")
 
     presets = OptionGroup(parser, "Presets")
     presets.add_option("--absorb", action="store_true", default=False,
@@ -132,6 +146,8 @@ def main():
     p3 = options.p3
     contour = options.c
     plot_now = options.plotnow
+    immune_frac = options.immune
+    imsweep = options.immunesweep
 
     if options.absorb:
         p1 = 1.0; p2 = 0.1; p3 = 0
@@ -140,7 +156,7 @@ def main():
     elif options.waves:
         p1 = 0.8; p2 = 0.1; p3 = 0.01
 
-    lattice = Lattice(x, y, p1, p2, p3)
+    lattice = Lattice(x, y, p1, p2, p3, immune_frac)
 
     if anim:
         lattice_queue = Queue()
@@ -185,6 +201,33 @@ def main():
             sys.stdout.write("#")
             sys.stdout.flush()
 
+    elif imsweep:
+        num_points = 11
+        interval = 0.05
+        # setup toolbar
+        sys.stdout.write("Running {} different points: ".format(num_points))
+        sys.stdout.write("[%s]" % (" " * num_points))
+        sys.stdout.flush()
+        sys.stdout.write("\b" * ((num_points)+1)) # return to start of line, after '['
+
+        p1 = 0.5; p2 = 0.5; p3 = 0.5
+        im_frac = 0
+        im_frac_list = []
+        for i in range(num_points):
+            lattice = Lattice(x, y, p1, p2, p3, im_frac)
+            frac_list = []
+            for j in range(num_runs):
+                lattice.sweep()
+                if (j % 10) == 0 and j > 1000:
+                    frac_list.append(lattice.get_inf_frac())
+
+            av_frac = np.mean(frac_list)
+            im_frac_list.append(av_frac)
+            im_frac += interval
+            sys.stdout.write("#")
+            sys.stdout.flush()
+
+
     else:
         for i in range(num_runs):
             lattice.sweep()
@@ -215,28 +258,53 @@ def main():
                 pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
             print("Wrote file: " + file_name)
 
+
+    elif imsweep:
+        im_list = list(np.linspace(0, 0.5, num_points))
+
+        data = {
+            'im_list'       : im_list,
+            'im_frac_list'  : im_frac_list
+        }
+
+        if plot_now:
+            plot_graph(data)
+        else:
+            file_name = 'data_s{}_r{}.pickle'.format(lattice.x, num_runs)
+            with open(file_name, 'wb') as f:
+                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+            print("Wrote file: " + file_name)
+
 def plot_graph(data):
 
-    p1_list = data['p1_list']
-    p3_list = data['p3_list']
-    frac_mat= data['frac_mat']
-    var_mat = data['var_mat']
+    if 'p1_list' in data:
+        p1_list = data['p1_list']
+        p3_list = data['p3_list']
+        frac_mat= data['frac_mat']
+        var_mat = data['var_mat']
 
-    plt.contourf(p1_list, p3_list, frac_mat)
-    plt.colorbar()
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
-    plt.show()
-    print(frac_mat)
-    print("")
+        plt.contourf(p1_list, p3_list, frac_mat)
+        plt.colorbar()
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
+        plt.show()
+        print(frac_mat)
+        print("")
 
-    plt.clf()
-    plt.contourf(p1_list, p3_list, var_mat)
-    plt.colorbar()
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
-    plt.show()
-    print(var_mat)
+        plt.clf()
+        plt.contourf(p1_list, p3_list, var_mat)
+        plt.colorbar()
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
+        plt.show()
+        print(var_mat)
+
+    else:
+        im_list = data['im_list']
+        im_frac_list = data['im_frac_list']
+
+        plt.plot(im_list, im_frac_list)
+        plt.show()
 
 if __name__ == '__main__':
     main()

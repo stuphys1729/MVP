@@ -46,7 +46,7 @@ class SIRS_Animator():
         data = lattice_queue.get()
 
         self.fig, self.ax_array = plt.subplots()
-        self.mat = self.ax_array.matshow(data, vmin=0, vmax=2)
+        self.mat = self.ax_array.matshow(data, vmin=0, vmax=3)
 
     def update(self, i):
 
