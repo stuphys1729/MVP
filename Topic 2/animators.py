@@ -32,8 +32,8 @@ class GoL_Animator():
 
     def animate(self):
         anim = animation.FuncAnimation(self.fig, self.update)
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        #figManager = plt.get_current_fig_manager()
+        #figManager.window.showMaximized()
         plt.show()
 
 class SIRS_Animator():
@@ -58,7 +58,7 @@ class SIRS_Animator():
 
     def animate(self):
         anim = animation.FuncAnimation(self.fig, self.update, frames=self.frames)
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        #figManager = plt.get_current_fig_manager()
+        #figManager.window.showMaximized()
         plt.show()
         return

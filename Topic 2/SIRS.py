@@ -253,7 +253,7 @@ def main():
         if plot_now:
             plot_graph(data)
         else:
-            file_name = 'data_s{}_r{}.pickle'.format(lattice.x, num_runs)
+            file_name = 'data_s{}_r{}_n{}.pickle'.format(lattice.x, num_runs, num_points)
             with open(file_name, 'wb') as f:
                 pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
             print("Wrote file: " + file_name)
@@ -270,7 +270,7 @@ def main():
         if plot_now:
             plot_graph(data)
         else:
-            file_name = 'data_s{}_r{}.pickle'.format(lattice.x, num_runs)
+            file_name = 'data_im_s{}_r{}_n{}.pickle'.format(lattice.x, num_runs, num_points)
             with open(file_name, 'wb') as f:
                 pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
             print("Wrote file: " + file_name)
@@ -285,8 +285,8 @@ def plot_graph(data):
 
         plt.contourf(p1_list, p3_list, frac_mat)
         plt.colorbar()
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        #figManager = plt.get_current_fig_manager()
+        #figManager.window.showMaximized()
         plt.show()
         print(frac_mat)
         print("")
@@ -294,8 +294,8 @@ def plot_graph(data):
         plt.clf()
         plt.contourf(p1_list, p3_list, var_mat)
         plt.colorbar()
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        #figManager = plt.get_current_fig_manager()
+        #figManager.window.showMaximized()
         plt.show()
         print(var_mat)
 
