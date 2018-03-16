@@ -24,9 +24,9 @@ class Lattice():
         self.x = x
         self.y = y
 
-        if init_cond == "random":
+        if init_cond == "random" or init_cond == 'r':
             self.lattice = np.random.choice( [1, 0], size=(x,y) )
-        elif init_cond == "glider":
+        elif init_cond == "glider" or init_cond == 'g':
             self.lattice = np.zeros( (x,y), dtype=np.int8)
             self.lattice[0,1] = 1
             self.lattice[1,2] = 1
@@ -34,14 +34,14 @@ class Lattice():
             self.lattice[2,1] = 1
             self.lattice[2,2] = 1
 
-        elif init_cond == "block":
+        elif init_cond == "block" or init_cond == 'b':
             self.lattice = np.zeros( (x,y), dtype=np.int8)
             self.lattice[1,1] = 1
             self.lattice[1,2] = 1
             self.lattice[2,1] = 1
             self.lattice[2,2] = 1
 
-        elif init_cond == "blink":
+        elif init_cond == "blink" or init_cond == 'i':
             self.lattice = np.zeros( (x,y), dtype=np.int8)
             self.lattice[2,2] = 1
             self.lattice[2,3] = 1
@@ -151,7 +151,7 @@ def main():
         lattice.evolve()
         if anim:
             lattice_queue.put( (deepcopy(lattice.lattice)) )
-        if init_cond == "glider":
+        if init_cond == "glider" or init_cond == 'g':
             com = lattice.get_CoM()
             if com:
                 x, y = com
@@ -160,7 +160,7 @@ def main():
     if anim:
         animator_proc.join()
 
-    if init_cond == "glider":
+    if init_cond == "glider" or init_cond == 'g':
         if num_runs > 200:
             x_list = x_list[:150]
             y_list = y_list[:150]
