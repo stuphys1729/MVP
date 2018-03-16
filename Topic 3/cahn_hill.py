@@ -37,6 +37,11 @@ class Lattice():
 
         if not init_cond:
             self.phi = np.random.uniform(-0.1, 0.1, size=(x,y) )
+        elif abs(init_cond) < 1:
+            self.phi = np.random.uniform(-0.1, 0.1, size=(x,y) )
+            for i in range(self.x):
+                for j in range(self.y):
+                    self.phi[i,j] += init_cond
         else:
             sys.exit("Initial conditions not recognised, aborting...")
 
@@ -85,9 +90,9 @@ class Lattice():
 
 def main():
 
-    num_runs = 100
+    num_runs = 10000
 
-    lattice = Lattice(50, 50, 1.0, 2.0, 0.1, 0.1, 0.1)
+    lattice = Lattice(100, 100, 1.0, 2.0, 0.1, 0.1, 0.1)
 
     lattice_queue = Queue()
     lattice_queue.put( (copy.deepcopy(lattice.phi)) )
@@ -99,7 +104,8 @@ def main():
 
     for i in range(num_runs):
         lattice.update()
-        lattice_queue.put( copy.deepcopy(lattice.phi) )
+        if (i % 10 == 0):
+            lattice_queue.put( copy.deepcopy(lattice.phi) )
 
     return
 
