@@ -20,7 +20,7 @@ class Cahn_Hill_Animator():
         data = lattice_queue.get()
 
         self.fig, self.ax_array = plt.subplots()
-        self.mat = self.ax_array.matshow(data, vmin=-1, vmax=1)
+        cont = self.ax_array.contourf(data, vmin=-1, vmax=1)
 
     def update(self, i):
 
@@ -28,10 +28,11 @@ class Cahn_Hill_Animator():
             time.sleep(0.1)
         else:
             data = self.queue.get()
-            self.mat.set_data(data)
+            cont = self.ax_array.contourf(data, vmin=-1, vmax=1)
+            return cont
 
     def animate(self):
         anim = animation.FuncAnimation(self.fig, self.update)
-        #figManager = plt.get_current_fig_manager()
-        #figManager.window.showMaximized()
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
         plt.show()
