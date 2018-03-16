@@ -303,8 +303,8 @@ def plot_graph(data):
         #figManager = plt.get_current_fig_manager()
         #figManager.window.showMaximized()
         plt.show()
-        print(frac_mat)
-        print("")
+        #print(frac_mat)
+        #print("")
 
         plt.clf()
         plt.contourf(p1_list, p3_list, var_mat)
@@ -315,7 +315,7 @@ def plot_graph(data):
         #figManager = plt.get_current_fig_manager()
         #figManager.window.showMaximized()
         plt.show()
-        print(var_mat)
+        #print(var_mat)
 
     else:
         im_list = data['im_list']
