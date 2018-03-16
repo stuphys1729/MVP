@@ -11,6 +11,7 @@ import pickle
 import copy
 
 from animators import Cahn_Hill_Animator as Animator
+from animators import Cahn_Hill_Animator_After as Post_Animator
 
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-14s) %(message)s',
@@ -38,10 +39,7 @@ class Lattice():
         if not init_cond:
             self.phi = np.random.uniform(-0.1, 0.1, size=(x,y) )
         elif abs(init_cond) < 1:
-            self.phi = np.random.uniform(-0.1, 0.1, size=(x,y) )
-            for i in range(self.x):
-                for j in range(self.y):
-                    self.phi[i,j] += init_cond
+            self.phi = np.random.uniform(init_cond-0.1, init_cond+0.1, size=(x,y) )
         else:
             sys.exit("Initial conditions not recognised, aborting...")
 
@@ -85,29 +83,72 @@ class Lattice():
                 self.update_phi(i,j)
 
         self.phi = copy.deepcopy(self.new_phi)
+        self.phi = self.new_phi
 
 
 
 def main():
 
-    num_runs = 10000
+    parser = OptionParser("Usage: >> python cahn_hill.py [options] <data_file>")
+    parser.add_option("-a", action="store_true", default=False,
+        help="Use this option to enable animation")
+    parser.add_option("-x", action="store", dest="x", default=50, type="int",
+        help="Use this to specify the x-axis size (default: 50)")
+    parser.add_option("-y", action="store", dest="y", default=50, type="int",
+        help="Use this to specify the y-axis size (default: 50)")
+    parser.add_option("-n", action="store", dest="n_runs", default=10000, type="int",
+        help="Use this to specify the number of runs (default: 10000)")
+    parser.add_option("--anim", action="store_true", default=False,
+        help="Use this option along with a data file to animate from it")
 
-    lattice = Lattice(100, 100, 1.0, 2.0, 0.1, 0.1, 0.1)
+    (options, args) = parser.parse_args()
+    if options.anim:
+        with open(args[0], 'rb') as f:
+            data = pickle.load(f)
+        show_animation(data)
+        return
 
-    lattice_queue = Queue()
-    lattice_queue.put( (copy.deepcopy(lattice.phi)) )
+    num_runs = options.n_runs
+    anim = options.a
+    init_cond = 0.5
 
-    animator = Animator(lattice_queue, num_runs)
+    lattice = Lattice(50, 50, 1.0, 2.0, 0.1, 0.1, 0.1, init_cond)
+    #print(lattice.phi)
 
-    animator_proc = Process(target=animator.animate)
-    animator_proc.start()
+    if anim:
+        lattice_queue = Queue()
+        lattice_queue.put( (copy.deepcopy(lattice.phi)) )
 
-    for i in range(num_runs):
-        lattice.update()
-        if (i % 10 == 0):
-            lattice_queue.put( copy.deepcopy(lattice.phi) )
+        animator = Animator(lattice_queue, num_runs)
 
-    return
+        animator_proc = Process(target=animator.animate)
+        animator_proc.start()
+
+        for i in range(num_runs):
+            lattice.update()
+            if (i % 10 == 0):
+                lattice_queue.put( copy.deepcopy(lattice.phi) )
+
+    else:
+
+        lattices = []
+        lattices.append( copy.deepcopy(lattice.phi))
+
+        for i in range(num_runs):
+            lattice.update()
+            if (i % 100) == 0:
+                lattices.append( copy.deepcopy(lattice.phi) )
+                print("Sweep number {}".format(i))
+
+        file_name = 'data_im_s{}_r{}_i{}.pickle'.format(lattice.x, num_runs, init_cond)
+        with open(file_name, 'wb') as f:
+            pickle.dump(lattices, f, pickle.HIGHEST_PROTOCOL)
+        print("Wrote file: " + file_name)
+
+
+def show_animation(data):
+    anim = Post_Animator(data)
+    anim.animate()
 
 if __name__ == '__main__':
     main()
