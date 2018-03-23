@@ -71,6 +71,27 @@ class Lattice():
 
         self.new_phi[i,j] = self.phi[i,j] + self.dtM_ds*(sum(neighbours) - 4*l[i,j])
 
+    def get_free_energy(self):
+        a = self.a
+        K = self.K
+        l = self.phi
+        dt = self.delt
+
+        f = 0
+        for i in range(self.x):
+            for j in range(self.y):
+
+                iup     = (i + 1) % self.x
+                jup     = (j + 1) % self.y
+                idown   = (i - 1) % self.x
+                jdown   = (j - 1) % self.y
+
+                grad_phi_i = (l[iup,j]-l[idown,j])/(2*dt)
+                grad_phi_j = (l[i,jup]-l[i,jdown])/(2*dt)
+                grad_phi_sq = grad_phi_i**2 + grad_phi_j**2
+                f += (-a/2)*l[i,j]**2 +(a/4)*l[i,j]**4 + (K/2)*grad_phi_sq
+
+        return f
 
     def update(self):
 
@@ -83,7 +104,7 @@ class Lattice():
                 self.update_phi(i,j)
 
         self.phi = copy.deepcopy(self.new_phi)
-        self.phi = self.new_phi
+        #self.phi = self.new_phi
 
 
 
@@ -98,6 +119,8 @@ def main():
         help="Use this to specify the y-axis size (default: 50)")
     parser.add_option("-n", action="store", dest="n_runs", default=10000, type="int",
         help="Use this to specify the number of runs (default: 10000)")
+    parser.add_option("-i", action="store", default=0.0, type="float",
+        help="Use this to specify the number of runs (default: 10000)")
     parser.add_option("--anim", action="store_true", default=False,
         help="Use this option along with a data file to animate from it")
 
@@ -110,7 +133,7 @@ def main():
 
     num_runs = options.n_runs
     anim = options.a
-    init_cond = 0.5
+    init_cond = options.i
 
     lattice = Lattice(50, 50, 1.0, 2.0, 0.1, 0.1, 0.1, init_cond)
     #print(lattice.phi)
@@ -126,8 +149,10 @@ def main():
 
         for i in range(num_runs):
             lattice.update()
-            if (i % 10 == 0):
+            if (i % 100 == 0):
                 lattice_queue.put( copy.deepcopy(lattice.phi) )
+                print("Sweep number {0:8d} | Free Energy: {1:3.2f}".format(i,
+                                                    lattice.get_free_energy()))
 
     else:
 
@@ -138,7 +163,8 @@ def main():
             lattice.update()
             if (i % 100) == 0:
                 lattices.append( copy.deepcopy(lattice.phi) )
-                print("Sweep number {}".format(i))
+                print("Sweep number {0:8d} | Free Energy: {1:7.02f}".format(i,
+                                                    lattice.get_free_energy()))
 
         file_name = 'data_im_s{}_r{}_i{}.pickle'.format(lattice.x, num_runs, init_cond)
         with open(file_name, 'wb') as f:
