@@ -43,7 +43,7 @@ class Lattice():
         else:
             sys.exit("Initial conditions not recognised, aborting...")
 
-        self.new_phi = np.zeros( (self.x, self.y) )
+        self.new_phi = np.zeros( (x, y) )
 
         self.mu = np.zeros( (x,y) )
 
@@ -78,6 +78,9 @@ class Lattice():
         dt = self.delt
 
         f = 0
+        sum1 = 0
+        sum2 = 0
+        sum3 = 0
         for i in range(self.x):
             for j in range(self.y):
 
@@ -87,9 +90,19 @@ class Lattice():
                 jdown   = (j - 1) % self.y
 
                 grad_phi_i = (l[iup,j]-l[idown,j])/(2*dt)
+                #logging.debug("grad_phi_i: {}".format(grad_phi_i))
                 grad_phi_j = (l[i,jup]-l[i,jdown])/(2*dt)
+                #logging.debug("grad_phi_j: {}".format(grad_phi_j))
                 grad_phi_sq = grad_phi_i**2 + grad_phi_j**2
-                f += (-a/2)*l[i,j]**2 +(a/4)*l[i,j]**4 + (K/2)*grad_phi_sq
+                s1 = (-a/2)*l[i,j]**2
+                s2 = (a/4)*l[i,j]**4
+                s3 = (K/2)*grad_phi_sq
+                sum1 += s1; sum2 += s2; sum3 += s3
+                f += (s1 + s2 + s3)
+                #f += (-a/2)*l[i,j]**2 + (a/4)*l[i,j]**4 + (K/2)*grad_phi_sq
+        logging.debug("Sum1 = {}".format(sum1))
+        logging.debug("Sum2 = {}".format(sum2))
+        logging.debug("Sum3 = {}".format(sum3))
 
         return f
 
@@ -113,6 +126,8 @@ def main():
     parser = OptionParser("Usage: >> python cahn_hill.py [options] <data_file>")
     parser.add_option("-a", action="store_true", default=False,
         help="Use this option to enable animation")
+    parser.add_option("-f", action="store_true", default=False,
+        help="Use this option to enable free energy plot at the end")
     parser.add_option("-x", action="store", dest="x", default=50, type="int",
         help="Use this to specify the x-axis size (default: 50)")
     parser.add_option("-y", action="store", dest="y", default=50, type="int",
@@ -120,7 +135,7 @@ def main():
     parser.add_option("-n", action="store", dest="n_runs", default=10000, type="int",
         help="Use this to specify the number of runs (default: 10000)")
     parser.add_option("-i", action="store", default=0.0, type="float",
-        help="Use this to specify the number of runs (default: 10000)")
+        help="Use this to specify the initial value of phi (default: 0.0)")
     parser.add_option("--anim", action="store_true", default=False,
         help="Use this option along with a data file to animate from it")
 
@@ -131,46 +146,64 @@ def main():
         show_animation(data)
         return
 
+    x = options.x
+    y = options.y
     num_runs = options.n_runs
     anim = options.a
     init_cond = options.i
+    f_plot = options.f
 
-    lattice = Lattice(50, 50, 1.0, 2.0, 0.1, 0.1, 0.1, init_cond)
+    lattice = Lattice(x, y, 1.0, 2.0, 0.1, 0.1, 0.1, init_cond)
     #print(lattice.phi)
 
     if anim:
         lattice_queue = Queue()
         lattice_queue.put( (copy.deepcopy(lattice.phi)) )
 
-        animator = Animator(lattice_queue, num_runs)
+        animator = Animator(lattice_queue)
 
         animator_proc = Process(target=animator.animate)
         animator_proc.start()
 
+        f_list = []
         for i in range(num_runs):
             lattice.update()
             if (i % 100 == 0):
+                f = lattice.get_free_energy()
+                f_list.append(f)
                 lattice_queue.put( copy.deepcopy(lattice.phi) )
-                print("Sweep number {0:8d} | Free Energy: {1:3.2f}".format(i,
-                                                    lattice.get_free_energy()))
+                print("Sweep number {0:8d} | Free Energy: {1:3.2f}".format(i,f))
 
     else:
 
         lattices = []
         lattices.append( copy.deepcopy(lattice.phi))
 
+        f_list = []
         for i in range(num_runs):
             lattice.update()
             if (i % 100) == 0:
+                f = lattice.get_free_energy()
+                f_list.append(f)
                 lattices.append( copy.deepcopy(lattice.phi) )
-                print("Sweep number {0:8d} | Free Energy: {1:7.02f}".format(i,
-                                                    lattice.get_free_energy()))
+                print("Sweep number {0:8d} | Free Energy: {1:7.02f}".format(i,f))
+                print(lattice.phi.max())
+                print(lattice.phi.min())
 
         file_name = 'data_im_s{}_r{}_i{}.pickle'.format(lattice.x, num_runs, init_cond)
         with open(file_name, 'wb') as f:
             pickle.dump(lattices, f, pickle.HIGHEST_PROTOCOL)
         print("Wrote file: " + file_name)
 
+    if f_plot:
+        if anim:
+            animator_proc.join()
+
+        plt.clf()
+
+        x_list = np.linspace(0, num_runs, len(f_list))
+        plt.plot(x_list, f_list)
+        plt.show()
 
 def show_animation(data):
     anim = Post_Animator(data)
