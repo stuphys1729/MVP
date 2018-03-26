@@ -9,6 +9,7 @@ from optparse import OptionParser
 import sys
 import pickle
 import copy
+from mpl_toolkits.mplot3d import axes3d
 
 from animators import Poisson_Animator as Animator
 from animators import Poisson_Animator_After as Post_Animator
@@ -47,21 +48,22 @@ class Lattice():
     def update_phi_jacobi(self):
         l = self.phi
         diff = 0
+        ds2 = self.dels**2
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
-            iup     = (i + 1) % self.x
-            idown   = (i - 1) % self.x
+            iup     = (i + 1)
+            idown   = (i - 1)
             for j in range(1, self.y-1):
-                jup     = (j + 1) % self.y
-                jdown   = (j - 1) % self.y
+                jup     = (j + 1)
+                jdown   = (j - 1)
                 for k in range(1, self.z-1):
-                    kup     = (k + 1) % self.z
-                    kdown   = (k - 1) % self.z
+                    kup     = (k + 1)
+                    kdown   = (k - 1)
 
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    self.new_phi[i,j,k] = (1/6)*(sum(neighbours) + self.rho[i,j,k])
+                    self.new_phi[i,j,k] = (1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
                     diff += abs(self.new_phi[i,j,k] - self.phi[i,j,k])
 
         self.phi = copy.deepcopy(self.new_phi)
@@ -70,22 +72,23 @@ class Lattice():
 
     def update_phi_gauss(self):
         l = self.phi
+        ds2 = self.dels**2
         diff = 0
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
-            iup     = (i + 1) % self.x
-            idown   = (i - 1) % self.x
+            iup     = (i + 1)
+            idown   = (i - 1)
             for j in range(1, self.y-1):
-                jup     = (j + 1) % self.y
-                jdown   = (j - 1) % self.y
+                jup     = (j + 1)
+                jdown   = (j - 1)
                 for k in range(1, self.z-1):
-                    kup     = (k + 1) % self.z
-                    kdown   = (k - 1) % self.z
+                    kup     = (k + 1)
+                    kdown   = (k - 1)
 
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    temp = (1/6)*(sum(neighbours) + self.rho[i,j,k])
+                    temp = (1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
                     diff += abs(self.phi[i,j,k] - temp)
                     self.phi[i,j,k] = temp
 
@@ -94,6 +97,7 @@ class Lattice():
 
     def update_phi_SOR(self, omega=None):
         l = self.phi
+        ds2 = self.dels**2
         diff = 0
         if omega:
             w = omega
@@ -113,7 +117,7 @@ class Lattice():
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    temp = (1-w)*self.phi[i,j,k] + w*(1/6)*(sum(neighbours) + self.rho[i,j,k])
+                    temp = (1-w)*self.phi[i,j,k] + w*(1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
                     diff += abs(self.phi[i,j,k] - temp)
                     self.phi[i,j,k] = temp
 
@@ -133,6 +137,24 @@ class Lattice():
                     phi_list.append(self.phi[i,j,k])
 
         return r_list, phi_list
+
+    def get_E_field(self):
+        l = self.phi
+        ds = self.dels
+
+        E_xlist = np.zeros( (self.x-2, self.x-2, self.z-2) )
+        E_ylist = np.zeros( (self.x-2, self.x-2, self.z-2) )
+        E_zlist = np.zeros( (self.x-2, self.x-2, self.z-2) )
+
+        for i in range(1, self.x-1):
+            for j in range(1, self.y-1):
+                for k in range(1, self.z-1):
+
+                    E_xlist[i-1,j-1,k-1] = (l[i+1,j,k] - l[i-1,j,k]) / (2*ds)
+                    E_ylist[i-1,j-1,k-1] = (l[i,j+1,k] - l[i,j-1,k]) / (2*ds)
+                    E_zlist[i-1,j-1,k-1] = (l[i,j,k+1] - l[i,j,k-1]) / (2*ds)
+
+        return E_xlist, E_ylist, E_zlist
 
 
 
@@ -213,8 +235,25 @@ def main():
 
     if anim:
         animator_proc.join()
-    plt.clf()
-    plt.scatter(r_list, phi_list)
+        plt.clf()
+    #plt.scatter(r_list, phi_list)
+    #plt.show()
+
+    #plt.clf()
+    #time.sleep(0.5)
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+
+    # Make the grid
+    X, Y, Z = np.meshgrid(np.arange(1, x-1),
+                          np.arange(1, y-1),
+                          np.arange(1, z-1))
+
+    Ex, Ey, Ez = lattice.get_E_field()
+
+    ax.quiver(X, Y, Z, Ex, Ey, Ez, length=0.5, normalize=True)
+
     plt.show()
 
 def show_animation(data):
