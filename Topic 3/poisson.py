@@ -72,7 +72,7 @@ class Lattice():
 
     def update_phi_gauss(self):
         l = self.phi
-        ds2 = self.ds**2
+        ds2_e0 = (self.ds**2)/self.e0
         diff = 0
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
@@ -225,23 +225,26 @@ def main():
         if (i % 5 == 0):
             if anim:
                 lattice_queue.put( (copy.deepcopy(lattice.phi[:,:,int(z/2)])) )
-            print("Sweep number {0:8d} | Diff: {1:7.02f}".format(i, diff))
+            print("Sweep number {0:8d} | Diff: {1:.02e}".format(i, diff))
         if diff <= tolerance:
             break
 
-
+    print("Converged after {} steps".format(i))
 
     r_list, phi_list = lattice.get_potential_from(int(x/2), int(y/2), int(z/2))
 
     if anim:
         animator_proc.join()
         plt.clf()
-    #plt.scatter(r_list, phi_list)
-    #plt.show()
+    plt.scatter(r_list, phi_list)
+    ax = plt.gca()
+    ax.set_ylim(0, max(phi_list)+max(phi_list)*0.01)
+    plt.show()
 
     #plt.clf()
     #time.sleep(0.5)
 
+    """
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
@@ -255,6 +258,7 @@ def main():
     ax.quiver(X, Y, Z, Ex, Ey, Ez, length=0.5, normalize=True)
 
     plt.show()
+    """
 
 def show_animation(data):
     pass

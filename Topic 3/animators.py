@@ -69,7 +69,7 @@ class Poisson_Animator():
         data = lattice_queue.get()
 
         self.fig, self.ax_array = plt.subplots()
-        cont = self.ax_array.contourf(data, vmin=0, vmax=0.5)
+        cont = self.ax_array.contourf(data, vmin=0, vmax=0.0025)
 
     def update(self, i):
 
@@ -77,7 +77,7 @@ class Poisson_Animator():
             time.sleep(0.1)
         else:
             data = self.queue.get()
-            cont = self.ax_array.contourf(data, vmin=0, vmax=0.5)
+            cont = self.ax_array.contourf(data, vmin=0, vmax=0.0025)
             return cont
 
     def animate(self):
