@@ -183,14 +183,14 @@ def main():
                 f_list.append(f)
                 lattices.append( copy.deepcopy(lattice.phi) )
                 print("Sweep number {0:8d} | Free Energy: {1:7.02f}".format(i,f))
-                print(lattice.phi.max())
-                print(lattice.phi.min())
+                #print(lattice.phi.max())
+                #print(lattice.phi.min())
 
         data = [ lattices, f_list, interval]
 
         file_name = 'data_im_s{}_r{}_i{}.pickle'.format(lattice.x, num_runs, init_cond)
         with open(file_name, 'wb') as f:
-            pickle.dump(lattices, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
         print("Wrote file: " + file_name)
 
     if f_plot:
@@ -206,16 +206,24 @@ def main():
 def show_animation(data):
 
     if len(data) != 3: # Old version of the pickling
-        anim = Post_Animator(data)
+        print(len(data))
+        anim = Post_Animator(data, 1)
         anim.animate()
+        return
 
     lattices = data[0]
     f_energy = data[1]
-    x_list = np.linspace(0, num_runs, len(f_list))
     interval = data[2]
 
     anim = Post_Animator(lattices, interval)
     anim.animate()
+
+    plt.clf()
+
+    num_runs = interval*len(lattices)
+    x_list = np.linspace(0, num_runs, len(f_list))
+    plt.plot(x_list, f_list)
+    plt.show()
 
 if __name__ == '__main__':
     main()

@@ -38,16 +38,17 @@ class Cahn_Hill_Animator():
 
 class Cahn_Hill_Animator_After():
 
-    def __init__(self, lattice_list):
+    def __init__(self, lattice_list, interval):
 
         self.lattice_list = lattice_list
+        self.interval = interval
 
         self.fig, self.ax = plt.subplots()
         cont = self.ax.contourf(lattice_list[0], vmin=-1, vmax=1)
 
     def update(self, i):
 
-        print(i)
+        print(i*self.interval)
         self.ax.cla()
         cont = self.ax.contourf(self.lattice_list[i], vmin=-1, vmax=1)
         return cont
