@@ -48,7 +48,7 @@ class Lattice():
     def update_phi_jacobi(self):
         l = self.phi
         diff = 0
-        ds2 = self.ds**2
+        ds2_e0 = (self.ds**2)/self.e0
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
             iup     = (i + 1)
@@ -63,7 +63,7 @@ class Lattice():
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    self.new_phi[i,j,k] = (1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
+                    self.new_phi[i,j,k] = (1/6)*(sum(neighbours) + ds2_e0*self.rho[i,j,k])
                     diff += abs(self.new_phi[i,j,k] - self.phi[i,j,k])
 
         self.phi = copy.deepcopy(self.new_phi)
@@ -88,7 +88,7 @@ class Lattice():
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    temp = (1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
+                    temp = (1/6)*(sum(neighbours) + ds2_e0*self.rho[i,j,k])
                     diff += abs(self.phi[i,j,k] - temp)
                     self.phi[i,j,k] = temp
 
@@ -97,7 +97,7 @@ class Lattice():
 
     def update_phi_SOR(self, omega=None):
         l = self.phi
-        ds2 = self.ds**2
+        ds2_e0 = (self.ds**2)/self.e0
         diff = 0
         if omega:
             w = omega
@@ -117,7 +117,7 @@ class Lattice():
                     neighbours = [ l[iup,j,k], l[idown,j,k], l[i,jup,k],
                                     l[i,jdown,k], l[i,j,kup], l[i,j,kdown] ]
 
-                    temp = (1-w)*self.phi[i,j,k] + w*(1/6)*(sum(neighbours) + ds2*self.rho[i,j,k])
+                    temp = (1-w)*self.phi[i,j,k] + w*(1/6)*(sum(neighbours) + ds2_e0*self.rho[i,j,k])
                     diff += abs(self.phi[i,j,k] - temp)
                     self.phi[i,j,k] = temp
 
@@ -169,7 +169,7 @@ def main():
     parser.add_option("-z", action="store", dest="z", default=50, type="int",
         help="Use this to specify the z-axis size (default: 50)")
     parser.add_option("-n", action="store", dest="n_runs", default=1000, type="int",
-        help="Use this to specify the number of runs (default: 1000)")
+        help="Use this to specify the maximum number of runs (default: 10000)")
     parser.add_option("-i", action="store", default="point", type="string",
         help="Use this to specify the initial condition")
     parser.add_option("-m", action="store", default="s", type="string",
@@ -219,8 +219,6 @@ def main():
         animator_proc.start()
 
     for i in range(num_runs):
-        #diff = lattice.update_phi_jacobi()
-        #diff = lattice.update_phi_gauss()
         diff = method()
         if (i % 5 == 0):
             if anim:

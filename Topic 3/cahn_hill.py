@@ -212,7 +212,7 @@ def show_animation(data):
         return
 
     lattices = data[0]
-    f_energy = data[1]
+    f_list   = data[1]
     interval = data[2]
 
     anim = Post_Animator(lattices, interval)

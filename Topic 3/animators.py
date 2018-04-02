@@ -77,7 +77,7 @@ class Poisson_Animator():
             time.sleep(0.1)
         else:
             data = self.queue.get()
-            cont = self.ax_array.contourf(data, vmin=0, vmax=0.0025)
+            cont = self.ax_array.contourf(data, vmin=0, vmax=0.008)
             return cont
 
     def animate(self):
