@@ -30,7 +30,7 @@ class Lattice():
         self.y = y
         self.z = z
 
-        self.dels = dels
+        self.ds = dels
         self.omega = omega
         self.e0 = e0
 
@@ -48,7 +48,7 @@ class Lattice():
     def update_phi_jacobi(self):
         l = self.phi
         diff = 0
-        ds2 = self.dels**2
+        ds2 = self.ds**2
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
             iup     = (i + 1)
@@ -72,7 +72,7 @@ class Lattice():
 
     def update_phi_gauss(self):
         l = self.phi
-        ds2 = self.dels**2
+        ds2 = self.ds**2
         diff = 0
         # don't change the boundaries (keep them at 0)
         for i in range(1, self.x-1):
@@ -97,7 +97,7 @@ class Lattice():
 
     def update_phi_SOR(self, omega=None):
         l = self.phi
-        ds2 = self.dels**2
+        ds2 = self.ds**2
         diff = 0
         if omega:
             w = omega
@@ -129,7 +129,7 @@ class Lattice():
         for i in range(1, self.x-1):
             for j in range(1, self.y-1):
                 for k in range(1, self.z-1):
-                    #(self.dels**3)*
+                    #(self.ds**3)*
                     r_x = ri - i; r_y = rj - j; r_z = rk - k
                     r = math.sqrt( r_x**2 + r_y**2 + r_z**2 )
                     #r = math.sqrt( ((ri - i)**2 + (rj - j)**2 + (rk - k)**2) )
@@ -140,7 +140,7 @@ class Lattice():
 
     def get_E_field(self):
         l = self.phi
-        ds = self.dels
+        ds = self.ds
 
         E_xlist = np.zeros( (self.x-2, self.x-2, self.z-2) )
         E_ylist = np.zeros( (self.x-2, self.x-2, self.z-2) )
@@ -174,8 +174,8 @@ def main():
         help="Use this to specify the initial condition")
     parser.add_option("-m", action="store", default="s", type="string",
         help="Use this to specify the update method (default: SOR)")
-    parser.add_option("-t", action="store", default=0.01, type="float",
-        help="Use this to specify the finish tolerance (default: 0.01)")
+    parser.add_option("-t", action="store", default=0.001, type="float",
+        help="Use this to specify the finish tolerance (default: 0.001)")
     parser.add_option("-w", action="store", default=1.0, type="float",
         help="Use this to specify the value of omega (default: 1.0)")
     parser.add_option("--anim", action="store_true", default=False,

@@ -48,12 +48,13 @@ class Cahn_Hill_Animator_After():
     def update(self, i):
 
         print(i)
+        self.ax.cla()
         cont = self.ax.contourf(self.lattice_list[i], vmin=-1, vmax=1)
         return cont
 
     def animate(self):
         anim = animation.FuncAnimation(self.fig, self.update,
-                                        frames=len(self.lattice_list))
+                                        frames=len(self.lattice_list), repeat=False)
         figManager = plt.get_current_fig_manager()
         figManager.window.showMaximized()
         plt.show()
@@ -86,16 +87,17 @@ class Poisson_Animator():
 
 class Poisson_Animator_After():
 
-    def __init__(self, lattice_list):
+    def __init__(self, lattice_list, interval):
 
         self.lattice_list = lattice_list
+        self.interval = interval
 
         self.fig, self.ax = plt.subplots()
         cont = self.ax.contourf(lattice_list[0], vmin=0, vmax=0.5)
 
     def update(self, i):
 
-        print(i)
+        print("Step Number: {}".format(i*interval))
         cont = self.ax.contourf(self.lattice_list[i], vmin=0, vmax=0.5)
         return cont
 

@@ -75,7 +75,7 @@ class Lattice():
         a = self.a
         K = self.K
         l = self.phi
-        dt = self.delt
+        ds = self.dels
 
         f = 0
         sum1 = 0
@@ -89,20 +89,13 @@ class Lattice():
                 idown   = (i - 1) % self.x
                 jdown   = (j - 1) % self.y
 
-                grad_phi_i = (l[iup,j]-l[idown,j])/(2*dt)
-                #logging.debug("grad_phi_i: {}".format(grad_phi_i))
-                grad_phi_j = (l[i,jup]-l[i,jdown])/(2*dt)
-                #logging.debug("grad_phi_j: {}".format(grad_phi_j))
+                grad_phi_i = (l[iup,j]-l[idown,j])/(2*ds)
+
+                grad_phi_j = (l[i,jup]-l[i,jdown])/(2*ds)
+
                 grad_phi_sq = grad_phi_i**2 + grad_phi_j**2
-                s1 = (-a/2)*l[i,j]**2
-                s2 = (a/4)*l[i,j]**4
-                s3 = (K/2)*grad_phi_sq
-                sum1 += s1; sum2 += s2; sum3 += s3
-                f += (s1 + s2 + s3)
-                #f += (-a/2)*l[i,j]**2 + (a/4)*l[i,j]**4 + (K/2)*grad_phi_sq
-        logging.debug("Sum1 = {}".format(sum1))
-        logging.debug("Sum2 = {}".format(sum2))
-        logging.debug("Sum3 = {}".format(sum3))
+
+                f += (-a/2)*l[i,j]**2 + (a/4)*l[i,j]**4 + (K/2)*grad_phi_sq
 
         return f
 
@@ -138,6 +131,8 @@ def main():
         help="Use this to specify the initial value of phi (default: 0.0)")
     parser.add_option("--anim", action="store_true", default=False,
         help="Use this option along with a data file to animate from it")
+    parser.add_option("--interval", action="store", dest="interval", default=100, type="int",
+        help="Use this to specify the gap between data grabs (default: 100)")
 
     (options, args) = parser.parse_args()
     if options.anim:
@@ -152,6 +147,7 @@ def main():
     anim = options.a
     init_cond = options.i
     f_plot = options.f
+    interval = options.interval
 
     lattice = Lattice(x, y, 1.0, 2.0, 0.1, 0.1, 0.1, init_cond)
     #print(lattice.phi)
@@ -168,7 +164,7 @@ def main():
         f_list = []
         for i in range(num_runs):
             lattice.update()
-            if (i % 100 == 0):
+            if (i % interval == 0):
                 f = lattice.get_free_energy()
                 f_list.append(f)
                 lattice_queue.put( copy.deepcopy(lattice.phi) )
@@ -190,6 +186,8 @@ def main():
                 print(lattice.phi.max())
                 print(lattice.phi.min())
 
+        data = [ lattices, f_list, interval]
+
         file_name = 'data_im_s{}_r{}_i{}.pickle'.format(lattice.x, num_runs, init_cond)
         with open(file_name, 'wb') as f:
             pickle.dump(lattices, f, pickle.HIGHEST_PROTOCOL)
@@ -206,7 +204,17 @@ def main():
         plt.show()
 
 def show_animation(data):
-    anim = Post_Animator(data)
+
+    if len(data) != 3: # Old version of the pickling
+        anim = Post_Animator(data)
+        anim.animate()
+
+    lattices = data[0]
+    f_energy = data[1]
+    x_list = np.linspace(0, num_runs, len(f_list))
+    interval = data[2]
+
+    anim = Post_Animator(lattices, interval)
     anim.animate()
 
 if __name__ == '__main__':
