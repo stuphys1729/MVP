@@ -178,7 +178,7 @@ def main():
         f_list = []
         for i in range(num_runs):
             lattice.update()
-            if (i % 100) == 0:
+            if (i % interval) == 0:
                 f = lattice.get_free_energy()
                 f_list.append(f)
                 lattices.append( copy.deepcopy(lattice.phi) )
