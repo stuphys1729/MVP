@@ -85,6 +85,7 @@ class Lattice():
 
         B_xlist = np.zeros( (self.x-2, self.y-2) )
         B_ylist = np.zeros( (self.x-2, self.y-2) )
+        mag_list = np.zeros( (self.x, self.y) )
 
         for i in range(1, self.x-1):
             for j in range(1, self.y-1):
@@ -92,11 +93,14 @@ class Lattice():
                 Bx = (l[i,j+1] - l[i,j-1]) / (2*ds)
                 By = - (l[i+1,j] - l[i-1,j]) / (2*ds)
 
-                # Normalisation
-                B_ylist[i-1,j-1] = Bx / np.sqrt( (Bx**2 + By**2) )
-                B_xlist[i-1,j-1] = By / np.sqrt( (Bx**2 + By**2) )
+                mag = np.sqrt( (Bx**2 + By**2) )
+                mag_list[i,j] = mag
 
-        return B_xlist, B_ylist
+                # Normalisation
+                B_ylist[i-1,j-1] = Bx / mag
+                B_xlist[i-1,j-1] = By / mag
+
+        return B_xlist, B_ylist, mag_list
 
 
 
@@ -164,9 +168,19 @@ def main():
     if anim:
         animator_proc.join()
         plt.clf()
+
+    # potential plot
     plt.scatter(r_list, A_list)
     ax = plt.gca()
     ax.set_ylim(0, max(A_list)+max(A_list)*0.01)
+    plt.show()
+
+    plt.clf()
+    time.sleep(0.1)
+
+    r_list = [np.log(r) for r in r_list]
+    A_list = [np.log(A) for A in A_list]
+    plt.scatter(r_list, A_list)
     plt.show()
 
 
@@ -177,9 +191,11 @@ def main():
     X, Y = np.meshgrid( np.arange(1, x-1),
                         np.arange(1, y-1) )
 
-    Ex, Ey = lattice.get_B_field()
+    Bx, By, mag_list = lattice.get_B_field()
 
-    plt.quiver(X, Y, Ex, Ey, width=0.001)
+    max_B = max(mag_list[int(x/2)])
+    plt.contourf(mag_list, vmin=0, vmax=max_B, cmap="Oranges")
+    plt.quiver(X, Y, Bx, By, width=0.001)
 
     plt.show()
 
