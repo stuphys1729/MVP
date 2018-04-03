@@ -9,7 +9,6 @@ from optparse import OptionParser
 import sys
 import pickle
 import copy
-from mpl_toolkits.mplot3d import axes3d
 
 from animators import Poisson_Animator as Animator
 from animators import Poisson_Animator_After as Post_Animator
@@ -90,8 +89,12 @@ class Lattice():
         for i in range(1, self.x-1):
             for j in range(1, self.y-1):
 
-                B_xlist[i-1,j-1] = (l[i,j+1] - l[i,j-1]) / (2*ds)
-                B_ylist[i-1,j-1] = - (l[i+1,j] - l[i-1,j]) / (2*ds)
+                Bx = (l[i,j+1] - l[i,j-1]) / (2*ds)
+                By = - (l[i+1,j] - l[i-1,j]) / (2*ds)
+
+                # Normalisation
+                B_ylist[i-1,j-1] = Bx / np.sqrt( (Bx**2 + By**2) )
+                B_xlist[i-1,j-1] = By / np.sqrt( (Bx**2 + By**2) )
 
         return B_xlist, B_ylist
 
@@ -176,7 +179,7 @@ def main():
 
     Ex, Ey = lattice.get_B_field()
 
-    plt.quiver(X, Y, Ex, Ey)
+    plt.quiver(X, Y, Ex, Ey, width=0.001)
 
     plt.show()
 
