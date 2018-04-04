@@ -10,6 +10,7 @@ import sys
 import pickle
 import copy
 from mpl_toolkits.mplot3d import axes3d
+from pathlib import Path
 
 from animators import Poisson_Animator as Animator
 from animators import Poisson_Animator_After as Post_Animator
@@ -207,6 +208,8 @@ def main():
         help="Use this option along with a data file to plot from")
     parser.add_option("--wplot", action="store_true", default=False,
         help="Use this option to run simulations with varying omega")
+    parser.add_option("--index", action="store", default=None, type="int",
+        help="Use this to specify only a certain w value from the static list")
 
     (options, args) = parser.parse_args()
     if options.showplot:
@@ -225,6 +228,10 @@ def main():
     y = options.y
     z = options.z
 
+    if options.wplot:
+        run_omegas(x, y, z, init_cond, num_runs, tolerance, options.index)
+        return
+
     lattice = Lattice(x, y, z, 0.1, 1.0, init_cond, omega)
 
     if options.m == "j":
@@ -235,10 +242,6 @@ def main():
         method = lattice.update_phi_SOR
     else:
         raise AttributeError("Method type not identified")
-
-    if options.wplot:
-        run_omegas(x, y, z, init_cond, options.m, num_runs, tolerance)
-        return
 
     lattice_queue = None
     if anim:
@@ -320,43 +323,54 @@ def run_sim(num_runs, tolerance, method, anim, lattice_queue=None, lattice=None)
 
     return i+1
 
-def run_omegas(x, y, z, init_cond, method_name, num_runs, tolerance):
+def run_omegas(x, y, z, init_cond, num_runs, tolerance, index=None):
 
     w_list = [1.0, 1.2, 1.4, 1.6, 1.8, 1.85, 1.875, 1.9, 1.91, 1.92, 1.93, 1.94, 1.95, 1.96, 1.97, 1.98, 1.99]
-    taken_list = []
-    num_w = len(w_list)
 
-    sys.stdout.write("Running {} different omega values: ".format(num_w))
-    sys.stdout.write("[%s]" % (" " * num_w))
-    sys.stdout.flush()
-    sys.stdout.write("\b" * (num_w+1)) # return to start of line, after '['
+    if index == None:
+        taken_list = []
+        num_w = len(w_list)
 
-    for w in w_list:
-
-        lattice = Lattice(x, y, z, 0.1, 1.0, init_cond, w)
-        if method_name == "j":
-            method = lattice.update_phi_jacobi
-        elif method_name == "g":
-            method = lattice.update_phi_gauss
-        elif method_name == "s":
-            method = lattice.update_phi_SOR
-        else:
-            raise AttributeError("Method type {} not identified".format(method_name))
-
-        taken = run_sim(num_runs, tolerance, method, False) # No animation
-        taken_list.append(taken)
-
-        sys.stdout.write("#")
+        sys.stdout.write("Running {} different omega values: ".format(num_w))
+        sys.stdout.write("[%s]" % (" " * num_w))
         sys.stdout.flush()
-    sys.stdout.write("\n")
+        sys.stdout.write("\b" * (num_w+1)) # return to start of line, after '['
 
-    data = [ w_list, taken_list ]
+        for w in w_list:
 
-    file_name = 'data_pos_s{}_w{}.pickle'.format(lattice.x, len(w_list))
-    with open(file_name, 'wb') as f:
-        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
-    print("Wrote file: " + file_name)
+            lattice = Lattice(x, y, z, 0.1, 1.0, init_cond, w)
 
+            taken = run_sim(num_runs, tolerance, lattice.update_phi_SOR, False) # No animation
+            taken_list.append(taken)
+
+            sys.stdout.write("#")
+            sys.stdout.flush()
+        sys.stdout.write("\n")
+
+        data = [ w_list, taken_list ]
+
+        file_name = 'data_pos_s{}_w{}.pickle'.format(lattice.x, len(w_list))
+        with open(file_name, 'wb') as f:
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        print("Wrote file: " + file_name)
+
+    else:
+        w = w_list[index]
+        print("Doing w at in index {} with value w={}".format(index, w))
+        lattice = Lattice(x, y, z, 0.1, 1.0, init_cond, w)
+
+        taken = run_sim(num_runs, tolerance, lattice.update_phi_SOR, False, None, lattice) # No animation
+
+        out_file = Path("pos_s{}_w.data".format(lattice.x))
+        if out_file.is_file(): # We might be the first to write to the file
+            open_type = 'a'
+        else:
+            open_type = 'w'
+
+        with open(out_file, open_type) as f:
+            f.write("{} {}\n".format(w, taken))
+        print("Wrote to file {} with type \'{}\'".format(out_file.name, open_type))
+        return
 
 def show_plot(data):
     w_list = data[0]
