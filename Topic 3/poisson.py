@@ -210,12 +210,18 @@ def main():
         help="Use this option to run simulations with varying omega")
     parser.add_option("--index", action="store", default=None, type="int",
         help="Use this to specify only a certain w value from the static list")
+    parser.add_option("--makepik", action="store_true", default=False,
+        help="Use this option to turn a data file to a pickle file for plotting")
 
     (options, args) = parser.parse_args()
     if options.showplot:
         with open(args[0], 'rb') as f:
             data = pickle.load(f)
         show_plot(data)
+        return
+
+    if options.makepik:
+        make_pickle(args[0])
         return
 
     num_runs = options.n_runs
@@ -371,6 +377,22 @@ def run_omegas(x, y, z, init_cond, num_runs, tolerance, index=None):
             f.write("{} {}\n".format(w, taken))
         print("Wrote to file {} with type \'{}\'".format(out_file.name, open_type))
         return
+
+def make_pickle(filename):
+
+    w_list = []
+    taken_list = []
+    with open(filename, 'r') as f:
+        for line in f:
+            values = line.split(" ")
+            w_list.append(float(values[0]))
+            taken_list.append(int(values[1]))
+    data = [ w_list, taken_list ]
+    out_file = filename + ".pickle"
+    with open(out_file, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    print("Wrote file: " + out_file)
+
 
 def show_plot(data):
     w_list = data[0]
