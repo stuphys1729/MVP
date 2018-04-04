@@ -193,7 +193,7 @@ def main():
         help="Use this to specify the y-axis size (default: 50)")
     parser.add_option("-z", action="store", dest="z", default=50, type="int",
         help="Use this to specify the z-axis size (default: 50)")
-    parser.add_option("-n", action="store", dest="n_runs", default=1000, type="int",
+    parser.add_option("-n", action="store", dest="n_runs", default=10000, type="int",
         help="Use this to specify the maximum number of runs (default: 10000)")
     parser.add_option("-i", action="store", default="point", type="string",
         help="Use this to specify the initial condition")
@@ -203,14 +203,16 @@ def main():
         help="Use this to specify the finish tolerance (default: 0.001)")
     parser.add_option("-w", action="store", default=1.0, type="float",
         help="Use this to specify the value of omega (default: 1.0)")
-    parser.add_option("--anim", action="store_true", default=False,
-        help="Use this option along with a data file to animate from it")
+    parser.add_option("--showplot", action="store_true", default=False,
+        help="Use this option along with a data file to plot from")
+    parser.add_option("--wplot", action="store_true", default=False,
+        help="Use this option to run simulations with varying omega")
 
     (options, args) = parser.parse_args()
-    if options.anim:
+    if options.showplot:
         with open(args[0], 'rb') as f:
             data = pickle.load(f)
-        show_animation(data)
+        show_plot(data)
         return
 
     num_runs = options.n_runs
@@ -234,6 +236,11 @@ def main():
     else:
         raise AttributeError("Method type not identified")
 
+    if options.wplot:
+        run_omegas(x, y, z, init_cond, options.m, num_runs, tolerance)
+        return
+
+    lattice_queue = None
     if anim:
         lattice_queue = Queue()
         lattice_queue.put( (copy.deepcopy(lattice.phi[:,:,int(z/2)])) )
@@ -243,16 +250,9 @@ def main():
         animator_proc = Process(target=animator.animate)
         animator_proc.start()
 
-    for i in range(num_runs):
-        diff = method()
-        if (i % 5 == 0):
-            if anim:
-                lattice_queue.put( (copy.deepcopy(lattice.phi[:,:,int(z/2)])) )
-            print("Sweep number {0:8d} | Diff: {1:.02e}".format(i, diff))
-        if diff <= tolerance:
-            break
+    taken = run_sim(num_runs, tolerance, method, anim, lattice_queue, lattice)
 
-    print("Converged after {} steps".format(i))
+    print("Converged after {} steps".format(taken))
 
     r_list, phi_list = lattice.get_potential_from(int(x/2), int(y/2), int(z/2))
 
@@ -291,7 +291,7 @@ def main():
 
     plt.show()
 
-    """
+    """ This is the stuff for a 3d plot
     fig = plt.figure()
     ax = fig.gca(projection='3d')
 
@@ -307,8 +307,63 @@ def main():
     plt.show()
     """
 
-def show_animation(data):
-    pass
+def run_sim(num_runs, tolerance, method, anim, lattice_queue=None, lattice=None):
+    for i in range(num_runs):
+        diff = method()
+        if (i % 5 == 0):
+            if anim:
+                lattice_queue.put( (copy.deepcopy(lattice.phi[:,:,int(lattice.z/2)])) )
+            if lattice != None:
+                print("Sweep number {0:8d} | Diff: {1:.02e}".format(i, diff))
+        if diff <= tolerance:
+            break
+
+    return i+1
+
+def run_omegas(x, y, z, init_cond, method_name, num_runs, tolerance):
+
+    w_list = [1.0, 1.2, 1.4, 1.6, 1.8, 1.85, 1.875, 1.9, 1.91, 1.92, 1.93, 1.94, 1.95, 1.96, 1.97, 1.98, 1.99]
+    taken_list = []
+    num_w = len(w_list)
+
+    sys.stdout.write("Running {} different omega values: ".format(num_w))
+    sys.stdout.write("[%s]" % (" " * num_w))
+    sys.stdout.flush()
+    sys.stdout.write("\b" * (num_w+1)) # return to start of line, after '['
+
+    for w in w_list:
+
+        lattice = Lattice(x, y, z, 0.1, 1.0, init_cond, w)
+        if method_name == "j":
+            method = lattice.update_phi_jacobi
+        elif method_name == "g":
+            method = lattice.update_phi_gauss
+        elif method_name == "s":
+            method = lattice.update_phi_SOR
+        else:
+            raise AttributeError("Method type {} not identified".format(method_name))
+
+        taken = run_sim(num_runs, tolerance, method, False) # No animation
+        taken_list.append(taken)
+
+        sys.stdout.write("#")
+        sys.stdout.flush()
+    sys.stdout.write("\n")
+
+    data = [ w_list, taken_list ]
+
+    file_name = 'data_pos_s{}_w{}.pickle'.format(lattice.x, len(w_list))
+    with open(file_name, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    print("Wrote file: " + file_name)
+
+
+def show_plot(data):
+    w_list = data[0]
+    taken_list = data[1]
+
+    plt.plot(w_list, taken_list)
+    plt.show()
 
 if __name__ == '__main__':
     main()
