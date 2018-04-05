@@ -265,56 +265,20 @@ def main():
 
     r_list, phi_list = lattice.get_potential_from(int(x/2), int(y/2), int(z/2))
 
+    Ex, Ey, mag_list = lattice.get_E_field(2)
+
+    data = [r_list, phi_list, Ex, Ey, mag_list]
+
+    file_name = 'data_pos_s{}.pickle'.format(lattice.x)
+    with open(file_name, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+    print("Wrote file: " + file_name)
+
     if anim:
         animator_proc.join()
         plt.clf()
 
-    # potential plot
-    plt.scatter(r_list, phi_list)
-    ax = plt.gca()
-    ax.set_ylim(0, max(phi_list)+max(phi_list)*0.01)
-    plt.show()
-
-    plt.clf()
-    time.sleep(0.1)
-
-    r_list = [np.log(r) for r in r_list]
-    phi_list = [np.log(phi) for phi in phi_list]
-    plt.scatter(r_list, phi_list)
-    plt.show()
-
-
-    # E-field plot
-    plt.clf()
-    time.sleep(0.1)
-
-    # Make the grid
-    X, Y = np.meshgrid( np.arange(1, x-1),
-                        np.arange(1, y-1) )
-
-    Ex, Ey, mag_list = lattice.get_E_field(2)
-
-    max_E = max(mag_list[int(x/2)])
-    plt.contourf(mag_list, vmin=0, vmax=max_E, cmap="Oranges")
-    plt.quiver(X, Y, Ex, Ey, width=0.001)
-
-    plt.show()
-
-    """ This is the stuff for a 3d plot
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-
-    # Make the grid
-    X, Y, Z = np.meshgrid(np.arange(1, x-1),
-                          np.arange(1, y-1),
-                          np.arange(1, z-1))
-
-    Ex, Ey, Ez = lattice.get_E_field()
-
-    ax.quiver(X, Y, Z, Ex, Ey, Ez, length=0.5, normalize=True)
-
-    plt.show()
-    """
+    show_plot(data)
 
 def run_sim(num_runs, tolerance, method, anim, lattice_queue=None, lattice=None):
     for i in range(num_runs):
@@ -395,11 +359,71 @@ def make_pickle(filename):
 
 
 def show_plot(data):
-    w_list = data[0]
-    taken_list = data[1]
 
-    plt.plot(w_list, taken_list)
-    plt.show()
+    if len(data) == 2:
+        w_list = data[0]
+        taken_list = data[1]
+
+        indices = np.argsort(w_list)
+        w_list = [w_list[i] for i in indices]
+        taken_list = [taken_list[i] for i in indices]
+
+        best = np.argmin(taken_list)
+        print("Best Omega value: {} with {} runs".format(w_list[best], taken_list[best]))
+
+        plt.plot(w_list, taken_list)
+        plt.show()
+
+    elif len(data) == 5:
+        r_list, phi_list, Ex, Ey, mag_list = data
+
+        # potential plot
+        plt.scatter(r_list, phi_list)
+        ax = plt.gca()
+        ax.set_ylim(0, max(phi_list)+max(phi_list)*0.01)
+        plt.show()
+
+        plt.clf()
+        time.sleep(0.1)
+
+        r_list = [np.log(r) for r in r_list]
+        phi_list = [np.log(phi) for phi in phi_list]
+        plt.scatter(r_list, phi_list)
+        plt.show()
+
+
+        # E-field plot
+        plt.clf()
+        time.sleep(0.1)
+
+        x = len(Ex)+2; y = len(Ex[0])+2
+        # Make the grid
+        X, Y = np.meshgrid( np.arange(1, x-1),
+                            np.arange(1, y-1) )
+
+
+
+        max_E = max(mag_list[int(x/2)])
+        plt.contourf(mag_list, vmin=0, vmax=max_E, cmap="Oranges")
+        plt.quiver(X, Y, Ex, Ey, width=0.001)
+
+        plt.show()
+
+        """ This is the stuff for a 3d plot
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+
+        # Make the grid
+        X, Y, Z = np.meshgrid(np.arange(1, x-1),
+                              np.arange(1, y-1),
+                              np.arange(1, z-1))
+
+        Ex, Ey, Ez = lattice.get_E_field()
+
+        ax.quiver(X, Y, Z, Ex, Ey, Ez, length=0.5, normalize=True)
+
+        plt.show()
+        """
 
 if __name__ == '__main__':
     main()
