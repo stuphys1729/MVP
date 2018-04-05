@@ -378,6 +378,7 @@ def show_plot(data):
         r_list, phi_list, Ex, Ey, mag_list = data
 
         # potential plot
+        """
         plt.scatter(r_list, phi_list)
         ax = plt.gca()
         ax.set_ylim(0, max(phi_list)+max(phi_list)*0.01)
@@ -385,24 +386,25 @@ def show_plot(data):
 
         plt.clf()
         time.sleep(0.1)
+        """
 
         r_list = [np.log(r) for r in r_list]
         phi_list = [np.log(phi) for phi in phi_list]
         plt.scatter(r_list, phi_list)
         plt.show()
 
+        cutoff = 1.5
+        grad = find_gradient(r_list, phi_list, cutoff)
+        print("phi r-dependence: {}".format(grad))
+        print("(with a cutoff of {})".format(cutoff))
 
         # E-field plot
         plt.clf()
         time.sleep(0.1)
 
-        x = len(Ex)+2; y = len(Ex[0])+2
-        # Make the grid
+        x = len(Ex)+2; y = len(Ex[0])+2 # Doesn't include the boundaries
         X, Y = np.meshgrid( np.arange(1, x-1),
                             np.arange(1, y-1) )
-
-
-
         max_E = max(mag_list[int(x/2)])
         plt.contourf(mag_list, vmin=0, vmax=max_E, cmap="Oranges")
         plt.quiver(X, Y, Ex, Ey, width=0.001)
@@ -424,6 +426,30 @@ def show_plot(data):
 
         plt.show()
         """
+
+def find_gradient(x_list, y_list, x_cutoff):
+    indices = []
+    for i in range(len(x_list)):
+        if not np.isfinite(x_list[i]):
+            continue
+        if not np.isfinite(y_list[i]):
+            continue
+        if x_list[i] < x_cutoff:
+            indices.append(i)
+
+    x_data = [x_list[i] for i in indices]
+    y_data = [y_list[i] for i in indices]
+
+    #print(x_data)
+    #print(y_data)
+
+    plt.clf()
+    plt.scatter(x_data, y_data)
+    plt.show()
+
+    coefs = np.polyfit(x_data, y_data, 1)
+
+    return coefs[0]
 
 if __name__ == '__main__':
     main()
