@@ -178,10 +178,18 @@ def main():
     plt.clf()
     time.sleep(0.1)
 
-    r_list = [np.log(r) for r in r_list]
+
     A_list = [np.log(A) for A in A_list]
     plt.scatter(r_list, A_list)
+
+    cutoff = 10
+    grad, intercept = find_gradient(r_list, A_list, cutoff)
+    print("A r-dependence: {}".format(grad))
+    print("(with a cutoff of {})".format(cutoff))
+    plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
+
     plt.show()
+
 
 
     plt.clf()
@@ -199,6 +207,41 @@ def main():
 
     plt.show()
 
+    plt.clf()
+    time.sleep(0.1)
+
+    B_list = []
+    for i in range(len(mag_list)):
+        for j in range(len(mag_list[0])):
+            B_list.append(mag_list[i,j])
+    B_list = [np.log(B) for B in B_list]
+    r_list = [np.log(r) for r in r_list]
+    plt.scatter(r_list, B_list)
+
+    cutoff = 10
+    grad, intercept = find_gradient(r_list, B_list, cutoff)
+    print("E r-dependence: {}".format(grad))
+    print("(with a cutoff of {})".format(cutoff))
+    plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
+
+    plt.show()
+
+def find_gradient(x_list, y_list, x_cutoff):
+    indices = []
+    for i in range(len(x_list)):
+        if not np.isfinite(x_list[i]):
+            continue
+        if not np.isfinite(y_list[i]):
+            continue
+        if x_list[i] < x_cutoff:
+            indices.append(i)
+
+    x_data = [x_list[i] for i in indices]
+    y_data = [y_list[i] for i in indices]
+
+    coefs = np.polyfit(x_data, y_data, 1)
+
+    return coefs
 
 def show_animation(data):
     pass

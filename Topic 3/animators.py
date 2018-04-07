@@ -62,14 +62,14 @@ class Cahn_Hill_Animator_After():
 
 class Poisson_Animator():
 
-    def __init__(self, lattice_queue):
+    def __init__(self, lattice_queue, vmin=0.0025):
 
         self.queue  = lattice_queue
-
+        self.vmin = vmin
         data = lattice_queue.get()
 
         self.fig, self.ax_array = plt.subplots()
-        cont = self.ax_array.contourf(data, vmin=0, vmax=0.0025)
+        cont = self.ax_array.contourf(data, vmin=0, vmax=vmin)
 
     def update(self, i):
 
@@ -77,7 +77,7 @@ class Poisson_Animator():
             time.sleep(0.1)
         else:
             data = self.queue.get()
-            cont = self.ax_array.contourf(data, vmin=0, vmax=0.008)
+            cont = self.ax_array.contourf(data, vmin=0, vmax=self.vmin)
             return cont
 
     def animate(self):

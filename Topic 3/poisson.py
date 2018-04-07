@@ -139,6 +139,23 @@ class Lattice():
 
         return r_list, phi_list
 
+    def get_E_from(self, ri, rj, rk):
+        r_list = []
+        E_list = []
+        Ex, Ey, Ez = self.get_E_field(3)
+        N = len(Ex)
+        for i in range(1, self.x-1):
+            for j in range(1, self.y-1):
+                for k in range(1, self.z-1):
+                    r_x = ri - i; r_y = rj - j; r_z = rk - k
+                    r = math.sqrt( r_x**2 + r_y**2 + r_z**2 )
+                    #r = math.sqrt( ((ri - i)**2 + (rj - j)**2 + (rk - k)**2) )
+                    r_list.append(r)
+                    E = math.sqrt( Ex[i-1,j-1,k-1]**2 + Ey[i-1,j-1,k-1]**2 + Ez[i-1,j-1,k-1]**2 )
+                    E_list.append(E)
+
+        return r_list, E_list
+
     def get_E_field(self, d):
 
         l = self.phi
@@ -254,7 +271,7 @@ def main():
         lattice_queue = Queue()
         lattice_queue.put( (copy.deepcopy(lattice.phi[:,:,int(z/2)])) )
 
-        animator = Animator(lattice_queue)
+        animator = Animator(lattice_queue, 0.0008)
 
         animator_proc = Process(target=animator.animate)
         animator_proc.start()
@@ -267,7 +284,9 @@ def main():
 
     Ex, Ey, mag_list = lattice.get_E_field(2)
 
-    data = [r_list, phi_list, Ex, Ey, mag_list]
+    ignore, E_mag_3d = lattice.get_E_from(int(x/2), int(y/2), int(z/2))
+
+    data = [r_list, phi_list, Ex, Ey, mag_list, E_mag_3d]
 
     file_name = 'data_pos_s{}.pickle'.format(lattice.x)
     with open(file_name, 'wb') as f:
@@ -376,7 +395,7 @@ def show_plot(data):
 
     elif len(data) == 5:
         r_list, phi_list, Ex, Ey, mag_list = data
-
+        print(max(phi_list))
         # potential plot
         """
         plt.scatter(r_list, phi_list)
@@ -391,12 +410,15 @@ def show_plot(data):
         r_list = [np.log(r) for r in r_list]
         phi_list = [np.log(phi) for phi in phi_list]
         plt.scatter(r_list, phi_list)
-        plt.show()
 
         cutoff = 1.5
-        grad = find_gradient(r_list, phi_list, cutoff)
+        grad, intercept = find_gradient(r_list, phi_list, cutoff)
         print("phi r-dependence: {}".format(grad))
         print("(with a cutoff of {})".format(cutoff))
+        plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
+
+        plt.show()
+
 
         # E-field plot
         plt.clf()
@@ -408,6 +430,80 @@ def show_plot(data):
         max_E = max(mag_list[int(x/2)])
         plt.contourf(mag_list, vmin=0, vmax=max_E, cmap="Oranges")
         plt.quiver(X, Y, Ex, Ey, width=0.001)
+
+        plt.show()
+
+        plt.clf()
+        time.sleep(0.1)
+
+        ri = rj = int( (len(Ex)+2) / 2 )
+        r_list = []
+        E_list = []
+        N = len(Ex)
+        for i in range(N):
+            for j in range(N):
+                r_x = ri - i; r_y = rj - j;
+                r = math.sqrt( r_x**2 + r_y**2 )
+                #r = math.sqrt( ((ri - i)**2 + (rj - j)**2 + (rk - k)**2) )
+                r_list.append(r)
+                E_list.append(mag_list[i,j])
+
+        r_list = [np.log(r) for r in r_list]
+        E_list = [np.log(E) for E in E_list]
+        plt.scatter(r_list, E_list)
+
+        cutoff = 1.5
+        grad, intercept = find_gradient(r_list, E_list, cutoff)
+        print("E r-dependence: {}".format(grad))
+        print("(with a cutoff of {})".format(cutoff))
+        plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
+
+        plt.show()
+
+    elif len(data) == 6:
+        r_list, phi_list, Ex, Ey, mag_list, E_mag_3d = data
+
+        n = len(phi_list)
+        print(phi_list)
+
+        r_list = [np.log(r) for r in r_list]
+        phi_list = [np.log(phi) for phi in phi_list]
+        plt.scatter(r_list, phi_list)
+
+        cutoff = 1.5
+        grad, intercept = find_gradient(r_list, phi_list, cutoff)
+        print("phi r-dependence: {}".format(grad))
+        print("(with a cutoff of {})".format(cutoff))
+        plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
+
+        plt.show()
+
+
+        # E-field plot
+        plt.clf()
+        time.sleep(0.1)
+
+        x = len(Ex)+2; y = len(Ex[0])+2 # Doesn't include the boundaries
+        X, Y = np.meshgrid( np.arange(1, x-1),
+                            np.arange(1, y-1) )
+        max_E = max(mag_list[int(x/2)])
+        plt.contourf(mag_list, vmin=0, vmax=max_E, cmap="Oranges")
+        plt.quiver(X, Y, Ex, Ey, width=0.001)
+
+        plt.show()
+
+        plt.clf()
+        time.sleep(0.1)
+
+
+        E_list = [np.log(E) for E in E_mag_3d]
+        plt.scatter(r_list, E_list)
+
+        cutoff = 1.5
+        grad, intercept = find_gradient(r_list, E_list, cutoff)
+        print("E r-dependence: {}".format(grad))
+        print("(with a cutoff of {})".format(cutoff))
+        plt.plot([0, max(r_list)], [intercept, grad*max(r_list) + intercept], color='r')
 
         plt.show()
 
@@ -440,16 +536,9 @@ def find_gradient(x_list, y_list, x_cutoff):
     x_data = [x_list[i] for i in indices]
     y_data = [y_list[i] for i in indices]
 
-    #print(x_data)
-    #print(y_data)
-
-    plt.clf()
-    plt.scatter(x_data, y_data)
-    plt.show()
-
     coefs = np.polyfit(x_data, y_data, 1)
 
-    return coefs[0]
+    return coefs
 
 if __name__ == '__main__':
     main()
